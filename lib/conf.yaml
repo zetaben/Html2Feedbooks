@@ -14,5 +14,7 @@ remove:
    after:
           - '/html/body/h4[3]'
 select:
-   - h3
+   expr: h3
+   select: 
+        expr: h4
 
