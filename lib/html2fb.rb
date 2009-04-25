@@ -1,8 +1,10 @@
 #!/usr/bin/ruby
 require 'open-uri'
+require 'lib/conf.rb'
 require 'lib/downloader.rb'
 require 'lib/document.rb'
 require 'lib/parser.rb'
+require 'lib/feedbooks.rb'
 
 include HTML2FB
 
@@ -18,10 +20,11 @@ while !valid
 		valid=false
 		puts e
 	end
-	print "URL : "
+	print "URL : " if entry.nil? || entry==''
 	entry=STDIN.readline.strip unless valid
 end
+conf=Conf.new('conf.yaml')
 content=Downloader.download(url)
-puts content.size
-doc=Parser.new.parse(content)
+#puts content.size
+doc=Parser.new(conf).parse(content)
 puts doc.toc.to_yaml

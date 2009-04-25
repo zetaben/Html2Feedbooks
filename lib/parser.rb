@@ -4,8 +4,8 @@ require 'lib/document.rb'
 module HTML2FB
 	class Parser
 
-		def initialize
-			@conf=File.open('lib/conf.yaml'){|f| YAML::load(f)}
+		def initialize(conf)
+			@conf=conf
 		end
 
 		def parse(txt)
@@ -18,7 +18,7 @@ module HTML2FB
 			#				doc.content.push(e.inner_text)
 			#			end
 
-			doc.content=parse_text(pdoc.search('/html/body//'),pdoc,@conf)	
+			parse_text(pdoc,doc)	
 
 			return doc
 		end
@@ -50,27 +50,55 @@ module HTML2FB
 			File.open('/tmp/test.html','w'){|f| f.write doc.to_html}
 		end
 
-		def parse_text(doc,root,conf=@conf)
-			return [doc,nil] if conf['select'].nil?
-			ret=[]
-			#puts conf['select'].inspect
-			points=root.search('//'+conf['select']['expr'])
-			#puts points.inspect
-			if points.size > 0 
-				p2=points.zip(points[1..-1]+[nil])
-				p2.each do |d,e|
-			#		puts d,e
-					el=root.between(d.xpath,(e ? e.xpath : nil) ) 
-					uu=doc-el
-			#		puts el
-					u,p = parse_text(el,root,conf['select'])
-					ret.push([uu+u,[p]])
-				end	
+		def parse_text(doc,ret)
+			ti  = doc.search('//'+@conf['select']['expr'])
+			tit = ti.zip ti[1..-1]+[nil]
+
+			tit.each do |a|
+				s=Section.new
+				tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).to_html
+				tmp.sub!(a.first.to_original_html,'')
+				s.content =[Text.new(tmp)]
+				s.title = a.first.inner_text.to_s
+				ret.content.push s
+				
 			end
-			ret
+
+			if @conf['select']['select']
+				conf=@conf['select']
+				parse_rec(ret,conf)
+			end
+		end
+
+		protected
+
+		def parse_rec(el,conf) 
+			return if conf.nil?
+			if el.is_a?Section
+				el.content.each do |l|
+					if l.is_a?Section
+						parse_rec(l,conf['select'])
+					else
+						doc=Hpricot(l.content)
+						ti  = doc.search('//'+conf['expr'])
+						return if ti.size ==0
+						tit = ti.zip ti[1..-1]+[nil]
+
+						tit.each do |a|
+							s=Section.new
+							tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).to_html
+							s.content = [Text.new(tmp)]
+							s.title = a.first.inner_text.to_s
+							el.content.push s
+							l.content.sub!(tmp,'')
+							l.content.sub!(a.first.to_original_html,'')
+						end
+
+					end
+				end
+			end
 		end
 	end
-
 end
 
 
