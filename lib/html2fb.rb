@@ -28,3 +28,4 @@ content=Downloader.download(url)
 #puts content.size
 doc=Parser.new(conf).parse(content)
 puts doc.toc.to_yaml
+doc.to_feedbooks(conf)

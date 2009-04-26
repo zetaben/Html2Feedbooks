@@ -38,7 +38,7 @@ module HTML2FB
 					x.parent.children.delete(x)
 				end unless @conf['remove']['before'].nil?
 				@conf['remove']['between'].each do |cl|
-					puts "between "+cl.inspect
+#					puts "between "+cl.inspect
 					doc.between(cl.first,cl.last).remove
 				end unless @conf['remove']['between'].nil?
 				@conf['remove']['after'].each do |cl|

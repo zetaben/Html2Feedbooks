@@ -18,3 +18,9 @@ select:
    select: 
         expr: h4
 
+fb:
+   user: #ask#
+   bookid: #ask#
+   booktype: userbook
+   pass: #ask#
+   host: 'feedbooks.com'

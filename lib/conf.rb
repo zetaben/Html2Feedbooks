@@ -4,7 +4,6 @@ module HTML2FB
 		def initialize(file)
 			['./',"#{File.dirname(__FILE__)}/","#{File.dirname(__FILE__)}/../confs/"].each do |p|
 				f=p+file
-				puts f
 				begin
 					if File.readable?(f) && File.exists?(f)
 						@conf=File.open(f,'r'){|txt| YAML::load(txt)}
