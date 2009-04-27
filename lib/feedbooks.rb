@@ -1,4 +1,4 @@
-require 'lib/app.rb'
+require 'app.rb'
 require 'hpricot'
 require 'digest/md5'
 

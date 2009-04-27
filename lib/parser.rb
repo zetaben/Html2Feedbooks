@@ -1,5 +1,5 @@
 require 'hpricot'
-require 'lib/document.rb'
+require 'document.rb'
 
 module HTML2FB
 	class Parser

@@ -1,10 +1,10 @@
 #!/usr/bin/ruby
 require 'open-uri'
-require 'lib/conf.rb'
-require 'lib/downloader.rb'
-require 'lib/document.rb'
-require 'lib/parser.rb'
-require 'lib/feedbooks.rb'
+require 'conf.rb'
+require 'downloader.rb'
+require 'document.rb'
+require 'parser.rb'
+require 'feedbooks.rb'
 
 include HTML2FB
 
