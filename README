@@ -8,4 +8,6 @@ Usage
 
 ./html2fb URL.html
 
-You can change settings in confs/conf.yaml
+You can change some settings by creating your own configuration file and using 
+
+html2fb -c myconf.yaml URL.html
