@@ -2,7 +2,7 @@
 module HTML2FB
 	class Conf
 		def initialize(file)
-			['./',"#{File.dirname(__FILE__)}/","#{File.dirname(__FILE__)}/../confs/"].each do |p|
+			['','./',"#{File.dirname(__FILE__)}/","#{File.dirname(__FILE__)}/../confs/"].each do |p|
 				f=p+file
 				begin
 					if File.readable?(f) && File.exists?(f)

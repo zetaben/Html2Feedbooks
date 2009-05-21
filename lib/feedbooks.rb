@@ -54,6 +54,7 @@ module HTML2FB
 	class Section
 		@@level=0
 		def to_feedbooks(conf)
+			puts "Sending to feedbooks"
 			fb=FBSession.session
 			post=AtomPost.new "http://#{fb.host}/#{fb.booktype}/#{fb.bookid}/contents.atom"
 			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+to_html+'</div>')
