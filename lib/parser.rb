@@ -67,6 +67,10 @@ module HTML2FB
 
 		def parse_text(doc,ret)
 			ti  = doc.search('//'+@conf['select']['expr'])
+			if ti.nil?
+				STDERR.puts "No #{@conf['select']['expr']} found"
+				return 
+			end
 			tit = ti.zip ti[1..-1]+[nil]
 
 			tit.each do |a|

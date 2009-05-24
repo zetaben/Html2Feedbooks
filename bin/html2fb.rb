@@ -6,6 +6,8 @@ require 'downloader.rb'
 require 'document.rb'
 require 'parser.rb'
 require 'feedbooks.rb'
+require 'tmpdir'
+require 'launchy'
 
 include HTML2FB
 
@@ -44,10 +46,11 @@ content=Downloader.download(url)
 doc=Parser.new(conf).parse(content)
 puts doc.toc.to_yaml
 if options[:preview]
-	f=File.open('/tmp/plop.html','w')
+	page=File.join(Dir.tmpdir(),Digest::MD5.hexdigest(url))+'.html'
+	f=File.open(page,'w')
 	f.write doc.to_html
 	f.close
-	`firefox /tmp/plop.html`
+	Launchy::Browser.run('file://'+page)
 else
 doc.to_feedbooks(conf)
 end
