@@ -46,7 +46,7 @@ content=Downloader.download(url)
 doc=Parser.new(conf).parse(content)
 puts doc.toc.to_yaml
 if options[:preview]
-	page=File.join(Dir.tmpdir(),Digest::MD5.hexdigest(url))+'.html'
+	page=File.join(Dir.tmpdir(),Digest::MD5.hexdigest(url.to_s))+'.html'
 	f=File.open(page,'w')
 	f.write doc.to_html
 	f.close
