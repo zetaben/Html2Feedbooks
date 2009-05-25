@@ -42,21 +42,64 @@ module HTML2FB
 		def to_feedbooks(conf)
 			FBSession.new(conf)
 			#File.open('/tmp/test3.html','w') do |f|
-				content.each do |e|
-			#		f << e.to_feedbooks(conf)
-					 e.to_feedbooks(conf)
-			#		f << " \n " *  10
-				end
+			content.each do |e|
+				#		f << e.to_feedbooks(conf)
+				e.to_feedbooks(conf,nil)
+				#		f << " \n " *  10
+			end
 			#end
+		end
+	end
+
+	class FBPost
+		def self.push(conf,tit,cont,type,path=nil)
+			puts "Sending to feedbooks #{tit}"
+			fb=FBSession.session
+			if path.nil?
+				post=AtomPost.new "http://#{fb.host}/#{fb.booktype}/#{fb.bookid}/contents.atom"
+			else
+				post=AtomPost.new "http://#{fb.host}#{path}"
+			end
+
+			post.content=cont
+			post.user=fb.user
+			post.pass=fb.pass
+			post.date=Time.now
+			post.author=fb.user
+			post.title=tit
+			post.type=type
+			s=post.send
+			post.down_url(s) unless s.nil?
 		end
 	end
 
 	class Section
 		@@level=0
-		def to_feedbooks(conf)
-			puts "Sending to feedbooks"
-			fb=FBSession.session
-			post=AtomPost.new "http://#{fb.host}/#{fb.booktype}/#{fb.bookid}/contents.atom"
+		@@types=['Part','Chapter','Section']
+		def to_feedbooks(conf,path=nil)
+			fbpath=FBPost.push(conf,title,'',@@types[@@level]||@@types[-1],path)
+			@@level+=1
+			content.each do |e|
+				e.to_feedbooks(conf,fbpath)
+			end
+			@@level-=1
+		end
+
+		alias :old_to_html :to_html
+
+		def to_html
+			ret=nil
+			if @@level==1
+				ret=old_to_html
+			else
+				ret="<h#{@@level+1}>"+title+"</h#{@@level+1}>"+old_to_html
+			end
+			ret
+		end
+	end
+
+	class Text
+		def to_feedbooks(conf,path=nil)
 			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+to_html+'</div>')
 			doc.traverse_all_element do |e|
 				unless e.is_a?Hpricot::Text 
@@ -64,27 +107,7 @@ module HTML2FB
 					e.etag.name='xhtml:'+e.etag.name unless e.etag.nil?
 				end
 			end
-			post.content=doc.to_html
-			post.user=fb.user
-			post.pass=fb.pass
-			post.date=Time.now
-			post.author=fb.user
-			post.title=title
-			post.send
-		end
-
-		alias :old_to_html :to_html
-
-		def to_html
-			ret=nil
-			@@level+=1
-			if @@level==1
-				ret=old_to_html
-			else
-				ret="<h#{@@level+1}>"+title+"</h#{@@level+1}>"+old_to_html
-			end
-			@@level-=1
-			ret
+			FBPost.push(conf,'',doc.to_html,"Text",path)
 		end
 	end
 end
