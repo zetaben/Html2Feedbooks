@@ -75,7 +75,7 @@ module HTML2FB
 
 			tit.each do |a|
 				s=Section.new
-				tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).to_html
+				tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}.join
 				tmp.sub!(a.first.to_original_html,'')
 				s.content =[Text.new(tmp)]
 				#buggy with entities
@@ -106,11 +106,12 @@ module HTML2FB
 
 						tit.each do |a|
 							s=Section.new
-							tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).to_html
-							s.content = [Text.new(tmp)]
+							tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}
+							
+							s.content = [Text.new(tmp.join)]
 							s.title = extract_text(a.first)
 							el.content.push s
-							l.content.sub!(tmp,'')
+							tmp.each{|t|l.content.sub!(t,'')}
 							l.content.sub!(a.first.to_original_html,'')
 						end
 
