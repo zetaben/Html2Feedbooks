@@ -53,7 +53,7 @@ module HTML2FB
 
 	class FBPost
 		def self.push(conf,tit,cont,type,path=nil)
-			puts "Sending to feedbooks #{tit}"
+			puts "Sending to feedbooks #{tit} with type #{type}"
 			fb=FBSession.session
 			if path.nil?
 				post=AtomPost.new "http://#{fb.host}/#{fb.booktype}/#{fb.bookid}/contents.atom"
@@ -77,7 +77,11 @@ module HTML2FB
 		@@level=0
 		@@types=['Part','Chapter','Section']
 		def to_feedbooks(conf,path=nil)
-			fbpath=FBPost.push(conf,title,'',@@types[@@level]||@@types[-1],path)
+			type=self.fblevel.to_s.downcase.strip.capitalize
+			unless @@types.include?type
+				type=@@types[@@level]||@@types[-1]
+			end
+			fbpath=FBPost.push(conf,title,'',type,path)
 			@@level+=1
 			content.each do |e|
 				e.to_feedbooks(conf,fbpath)

@@ -3,6 +3,7 @@ module HTML2FB
 	class Section
 		attr_accessor :title
 		attr_accessor :content
+		attr_accessor :fblevel
 
 		def initialize
 			@content=[]
@@ -12,17 +13,25 @@ module HTML2FB
 			content.collect{|e|e.to_html}.join
 		end
 
+		def decorated_title
+			unless fblevel.nil?
+				"[#{fblevel}] "+title
+			else
+				title
+			end
+		end
+
 		def titles
 			tit=[]
 			content.each do |f|
 				if f.is_a?Section
-					tit.push f.title
+					tit.push f.decorated_title
 				else
 					tit.push '#text'
 				end
 			end
 
-			return [title,tit]
+			return [decorated_title,tit]
 		end
 
 		def to_s
@@ -35,7 +44,7 @@ module HTML2FB
 			#return content
 			return content.collect{|a|a.titles}
 		end
-		
+
 	end
 
 	class Text

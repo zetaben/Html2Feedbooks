@@ -75,6 +75,7 @@ module HTML2FB
 
 			tit.each do |a|
 				s=Section.new
+				s.fblevel=@conf['select']['fblevel']
 				tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}.join
 				tmp.sub!(a.first.to_original_html,'')
 				s.content =[Text.new(tmp)]
@@ -106,6 +107,7 @@ module HTML2FB
 
 						tit.each do |a|
 							s=Section.new
+							s.fblevel=conf['fblevel']
 							tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}
 							
 							s.content = [Text.new(tmp.join)]

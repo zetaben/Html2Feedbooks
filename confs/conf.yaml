@@ -4,23 +4,22 @@ remove:
         - pagenum
         - totoi
         - img
+        - pg 
    expr:
         - 'table' 
         - //pre
-   between:
-        - 
-          - "//body"
-          - "//body/h3[4]"
-   after:
-          - '/html/body/h4[3]'
+        - hr
+
 select:
    expr: h3
+   fblevel: Chapter
    select: 
         expr: h4
+        fblevel: Section
 
 fb:
    user: #ask#
    bookid: #ask#
-   booktype: userbook
+   booktype: #ask#
    pass: #ask#
    host: 'feedbooks.com'
