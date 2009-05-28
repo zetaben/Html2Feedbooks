@@ -51,7 +51,7 @@ if options[:preview]
 	f.write doc.to_html
 	f.close
 	puts "A preview of the parsed file should be opening in your webbrowser now"
-	puts "If nothing open you can open the file here : #{page}"
+	puts "If nothing open you can open the file located at : #{page}"
 	puts "When happy with the parsed output rerun with -s option to send to Feedbooks.com"
 	Launchy::Browser.run(page)
 else
