@@ -50,7 +50,10 @@ if options[:preview]
 	f=File.open(page,'w')
 	f.write doc.to_html
 	f.close
-	Launchy::Browser.run('file://'+page)
+	puts "A preview of the parsed file should be opening in your webbrowser now"
+	puts "If nothing open you can open the file here : #{page}"
+	puts "When happy with the parsed output rerun with -s option to send to Feedbooks.com"
+	Launchy::Browser.run(page)
 else
 doc.to_feedbooks(conf)
 end

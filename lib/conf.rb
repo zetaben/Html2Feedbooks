@@ -1,3 +1,4 @@
+require 'yaml'
 
 module HTML2FB
 	class Conf
