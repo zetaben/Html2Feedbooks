@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 	s.name = %q{Html2Feedbooks}
-	s.version = '0.4.1'
+	s.version = '0.4.2'
 	s.date = %q{2009-04-28}
 	s.authors = ["Benoit Larroque"]
 	s.email = "zeta dot ben at gmail dot com"

@@ -104,14 +104,16 @@ module HTML2FB
 
 	class Text
 		def to_feedbooks(conf,path=nil)
-			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+to_html+'</div>')
+			stxt=to_html
+			return unless stxt.strip.size > 0
+			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+stxt+'</div>')
 			doc.traverse_all_element do |e|
 				unless e.is_a?Hpricot::Text 
 					e.stag.name='xhtml:'+e.stag.name
 					e.etag.name='xhtml:'+e.etag.name unless e.etag.nil?
 				end
 			end
-			FBPost.push(conf,'',doc.to_html,"Text",path)
+			FBPost.push(conf,'',doc.to_html,"Text",path) 
 		end
 	end
 end
