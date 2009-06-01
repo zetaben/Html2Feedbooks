@@ -50,7 +50,7 @@ class AtomPost
 
 		req.body  = '<?xml version="1.0"?>'+"\n"
 		req.body  +='<entry xmlns="http://www.w3.org/2005/Atom">'+"\n"
-		req.body  +='<title>'+recode_text(title)+'</title>'+"\n"
+		req.body  +='<title>'+decode_text(title)+'</title>'+"\n"
 		req.body  +='<id>'+Digest::MD5.hexdigest(title+content)+'</id>'+"\n"
 		req.body  +='<updated>'+date.xmlschema+'</updated>'+"\n"
 		req.body  +='<author><name>'+author+'</name></author>'+"\n"
@@ -82,4 +82,12 @@ class AtomPost
 	def force_decimal_entities(txt)
 		HTMLENCODER.encode(HTMLENCODER.decode(txt),:decimal)
 	end
+	
+	def decode_text(txt)
+		return txt if txt.blank?
+		m=Hpricot(txt)
+		m.traverse_text{|t| HTMLENCODER.decode(t.content)}
+		m.to_html
+	end
+
 end
