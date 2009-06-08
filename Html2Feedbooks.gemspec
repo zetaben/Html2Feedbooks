@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 	s.name = %q{Html2Feedbooks}
-	s.version = '0.4.3'
+	s.version = '0.4.4'
 	s.date = %q{2009-04-28}
 	s.authors = ["Benoit Larroque"]
 	s.email = "zeta dot ben at gmail dot com"
@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
 	s.require_paths = ["lib"]
 	s.executables = ['html2fb.rb']
 	s.default_executable = 'html2fb.rb'
-	s.add_dependency('hpricot', '>= 0.6')
+	s.add_dependency('hpricot', '>= 0.8.1')
 	s.add_dependency('htmlentities', '>= 4.0')
 	s.add_dependency('launchy', '>= 0.3')
 end 

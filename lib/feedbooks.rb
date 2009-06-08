@@ -109,8 +109,8 @@ module HTML2FB
 			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+stxt+'</div>')
 			doc.traverse_all_element do |e|
 				unless e.is_a?Hpricot::Text 
-					e.stag.name='xhtml:'+e.stag.name
-					e.etag.name='xhtml:'+e.etag.name unless e.etag.nil?
+					e.name='xhtml:'+e.name
+					e.etag='xhtml:'+e.etag unless e.etag.nil?
 				end
 			end
 			FBPost.push(conf,'',doc.to_html,"Text",path) 
