@@ -24,11 +24,11 @@ module HTML2FB
 		def titles
 			tit=[]
 			content.each do |f|
-				if f.is_a?Section
-					tit.push f.decorated_title
-				else
-					tit.push '#text'
-				end
+#				if f.is_a?Section
+					tit.push f.titles
+#				else
+#					tit.push '#text'
+#				end
 			end
 
 			return [decorated_title,tit]
@@ -42,7 +42,9 @@ module HTML2FB
 	class Document < Section
 		def toc
 			#return content
-			return content.collect{|a|a.titles}
+			return content.collect{|a|
+				a.titles
+			}
 		end
 
 	end
@@ -60,6 +62,10 @@ module HTML2FB
 
 		def to_s
 			@content
+		end
+
+		def titles
+			return ['#text']
 		end
 	end
 end

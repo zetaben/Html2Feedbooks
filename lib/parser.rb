@@ -1,19 +1,14 @@
 require 'hpricot'
 require 'document.rb'
+require 'progressbar'
+#require 'term/ansicolor'
+#include Term::ANSIColor
 
 module HTML2FB
 	class Parser
 
 		def initialize(conf)
 			@conf=conf
-		end
-
-		def extract_text(n)
-			t=''
-			n.traverse_all_element do |e|
-				t+=e.content.to_s if e.is_a?(Hpricot::Text)
-			end
-			t
 		end
 
 		def parse(txt)
@@ -23,13 +18,15 @@ module HTML2FB
 			puts "Removing garbage elements"
 			remove_objs(pdoc)
 			ti=pdoc.at('title')
-			doc.title= extract_text(ti).strip unless ti.nil?
+			doc.title= ti.extract_text.strip unless ti.nil?
 			#			pdoc.search('//h3').each do |e|
 			#				doc.content.push(e.inner_text)
 			#			end
 
 			puts "Building TOC"
 			parse_text(pdoc,doc)	
+
+#			puts green(bold(doc.pretty_inspect))
 
 			return doc
 		end
@@ -66,60 +63,119 @@ module HTML2FB
 		end
 
 		def parse_text(doc,ret)
-			ti  = doc.search('//'+@conf['select']['expr'])
-			if ti.nil?
-				STDERR.puts "No #{@conf['select']['expr']} found"
-				return 
+			aut=build_autom(@conf['select'],ret)
+			
+			pbar = ProgressBar.new("Parsing", doc.search('//').size)
+			doc.traverse_all_element do |el|
+			aut.feed(el)
+			pbar.inc
 			end
-			tit = ti.zip ti[1..-1]+[nil]
-
-			tit.each do |a|
-				s=Section.new
-				s.fblevel=@conf['select']['fblevel']
-				tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}.join
-				tmp.sub!(a.first.to_original_html,'')
-				s.content =[Text.new(tmp)]
-				#buggy with entities
-				s.title = extract_text(a.first)
-				ret.content.push s
-				
-			end
-
-			if @conf['select']['select']
-				conf=@conf['select']
-				parse_rec(ret,conf)
-			end
+			pbar.finish
+			aut.finish(doc)
 		end
 
 		protected
 
-		def parse_rec(el,conf) 
-			return if conf.nil?
-			if el.is_a?Section
-				el.content.each do |l|
-					if l.is_a?Section
-						parse_rec(l,conf['select'])
-					else
-						doc=Hpricot(l.content)
-						ti  = doc.search('//'+conf['expr'])
-						return if ti.size ==0
-						tit = ti.zip ti[1..-1]+[nil]
+		def build_autom(conf_tab,doc)
+			mach=StateMachine.new
+			build_rec(mach,conf_tab)
+			mach.reset(doc)
+			mach
+		end
 
-						tit.each do |a|
-							s=Section.new
-							s.fblevel=conf['fblevel']
-							tmp=doc.between(a.first.xpath,a.last.nil? ? nil : a.last.xpath).collect{|r| r.to_original_html}
-							
-							s.content = [Text.new(tmp.join)]
-							s.title = extract_text(a.first)
-							el.content.push s
-							tmp.each{|t|l.content.sub!(t,'')}
-							l.content.sub!(a.first.to_original_html,'')
-						end
+		def build_rec(mach,conf_tab)
+			return if conf_tab.size < 1
+			exprs=conf_tab.collect{|e| e.reject{|k,v| k=='select'} }
+			mach.add_level(exprs)
+			build_rec(mach,conf_tab.collect{|e| e['select'] }.flatten.reject{|a|a.nil?})
+		end
+	end
 
+	class StateMachine
+
+		def initialize
+			@levels=[]
+			@current_level=0
+			@starts=[]
+			@done=[]
+			@max_level=0
+			@content=nil
+		end
+
+		def add_level(tab)
+			tab=[tab] unless tab.is_a?Array
+			@levels.push tab
+			@current_level+=1
+		end
+
+		def reset(doc)
+			@current_level=0
+			@max_level=@levels.size
+			@starts[0]=doc
+			@content='body'
+		end
+
+		def inspect
+			@levels.inspect+"\n"+@current_level.to_s+"\n\n"+@done.inspect
+		end
+
+		def create_fbsection(title,fblevel)
+			s=Section.new
+			s.fblevel=fblevel
+			s.title = title
+			s
+		end
+
+		def create_textNode(txt)
+			Text.new(txt)
+		end
+
+		def finish(doc)
+			unless @content.nil?
+			#	t=create_textNode(doc.root.search(@content...doc.children.last.xpath))
+				t=create_textNode(doc.at(@content).following.to_html)
+				@starts[@current_level].content.push(t)
+			end
+			(1..@max_level).to_a.reverse.each do |l|
+				close_section(l)
+			end
+			@starts[0]
+		end
+
+		def open_section(obj,lvl,el)
+		#	if @current_level < lvl
+				t=create_textNode((el.root.search(@content...(el.xpath))[1..-1].to_html))
+				@starts[@current_level].content.push(t)
+		#	end
+			(lvl..@max_level).to_a.reverse.each do |l|
+				close_section(l)
+			end
+			@starts[lvl]=create_fbsection(el.root.at(obj[:xpath]).extract_text,obj[:fblevel])
+			@content=obj[:xpath]
+			@current_level=lvl
+		end
+
+		def close_section(lvl)
+			return if @starts[lvl].nil?
+			@starts[lvl-1].content.push @starts[lvl]
+			@starts[lvl]=nil
+		end
+
+		def feed(el)
+			return if el.is_a?Hpricot::Text
+			@done=[[]*@levels.size]
+
+			@levels.each_with_index do  |lvl,i|
+				lvl.each do |expr|
+					#puts i.to_s+" "+el.inspect if el.in_search?(expr['expr'])
+					if el.in_search?(expr['expr'])
+
+
+						open_section({:xpath => el.xpath, :fblevel => expr['fblevel']},i+1,el)
 					end
 				end
 			end
+
 		end
 	end
 end
@@ -138,36 +194,30 @@ class NilClass
 end
 
 module Hpricot::Traverse
-	def between(i,j)
-		#puts i,j
-		unless j.nil? || self.at(j).nil?
-			prec=self.at(i).deep_preceding
-			Hpricot::Elements[*self.at(j).deep_preceding.find_all{|el| !prec.include?el}]
-		else
-			self.at(i).deep_following unless self.at(i).nil?
+	def in_search?(expr)
+		se_in=self.parent
+		if expr[0..1]=='/'
+		se_in=se_in.parent until se_in.parent.nil?
 		end
+		se_in.search(expr).each do |el|
+			return true if el==self
+		end
+#		puts self.name+" "+expr
+		return false
 	end
 
-	def deep_preceding()
-	ret=Hpricot::Elements[]
-	ret+=parent.deep_preceding if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
-	ret+=preceding
-	Hpricot::Elements[*ret]
+	def root
+		se_in=self
+		se_in=se_in.parent until se_in.parent.nil?
+		se_in
 	end
-	def deep_following()
-	ret=following
-	ret+=parent.deep_following if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
-	Hpricot::Elements[*ret]
+
+	def extract_text
+		t=''
+		self.traverse_all_element do |e|
+			t+=e.content.to_s if e.is_a?(Hpricot::Text)
+		end
+		t
 	end
 end
 
-
-class Hpricot::Elements
-	def between(i,j)
-		Hpricot::Elements[*self.collect{|a| a.between(i,j)}]
-	end
-
-	def -(a)
-		Hpricot::Elements[*self.find_all{|el| !a.include?el}]
-	end
-end

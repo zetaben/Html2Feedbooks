@@ -93,11 +93,10 @@ module HTML2FB
 
 		def to_html
 			ret=nil
-			if @@level==1
-				ret=old_to_html
-			else
-				ret="<h#{@@level+1}>"+title+"</h#{@@level+1}>"+old_to_html
-			end
+			ret="<h#{@@level+1}>"+title+"</h#{@@level+1}>"
+			@@level+=1
+			ret+=old_to_html
+			@@level-=1
 			ret
 		end
 	end

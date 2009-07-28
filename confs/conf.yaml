@@ -11,11 +11,11 @@ remove:
         - hr
 
 select:
-   expr: h3
-   fblevel: Chapter
-   select: 
-        expr: h4
-        fblevel: Section
+   - expr: h2
+     fblevel: Part
+     select: 
+      -  expr: h3
+         fblevel: Chapter
 
 fb:
    user: #ask#
