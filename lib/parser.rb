@@ -1,6 +1,7 @@
 require 'hpricot'
 require 'document.rb'
 require 'progressbar'
+#require 'ruby-prof'
 #require 'term/ansicolor'
 #include Term::ANSIColor
 
@@ -63,6 +64,9 @@ module HTML2FB
 		end
 
 		def parse_text(doc,ret)
+#			RubyProf.start
+
+
 			aut=build_autom(@conf['select'],ret)
 			
 			pbar = ProgressBar.new("Parsing", doc.search('//').size)
@@ -72,6 +76,16 @@ module HTML2FB
 			end
 			pbar.finish
 			aut.finish(doc)
+=begin
+			 result = RubyProf.stop
+			  printer = RubyProf::FlatPrinter.new(result)
+			  printer.print(STDOUT, 0)
+			  printer.print(File.new('/versatile/prof','w'),0)
+			    printer = RubyProf::GraphHtmlPrinter.new(result)
+			      printer.print(File.new('/versatile/profgraph.html','w'), :min_percent=>0)
+			    printer = RubyProf::CallTreePrinter.new(result)
+			      printer.print(File.new('/versatile/profgraph.tree','w'), :min_percent=>0)
+=end
 		end
 
 		protected
@@ -143,10 +157,14 @@ module HTML2FB
 		end
 
 		def open_section(obj,lvl,el)
-		#	if @current_level < lvl
-				t=create_textNode((el.root.search(@content...(el.xpath))[1..-1].to_html))
-				@starts[@current_level].content.push(t)
-		#	end
+			tmp=el.root.search(@content...(el.xpath))[1..-1]
+			unless tmp.blank?
+			tmph=tmp.to_html
+			unless tmph.blank?
+			t=create_textNode(tmph)
+			@starts[@current_level].content.push(t)
+			end
+			end
 			(lvl..@max_level).to_a.reverse.each do |l|
 				close_section(l)
 			end
@@ -172,6 +190,7 @@ module HTML2FB
 
 
 						open_section({:xpath => el.xpath, :fblevel => expr['fblevel']},i+1,el)
+						break
 					end
 				end
 			end
@@ -183,7 +202,7 @@ end
 
 class String
 	def blank?
-		self==""
+		self !~ /\S/
 	end
 end
 
@@ -197,7 +216,7 @@ module Hpricot::Traverse
 	def in_search?(expr)
 		se_in=self.parent
 		if expr[0..1]=='/'
-		se_in=se_in.parent until se_in.parent.nil?
+		se_in=self.root
 		end
 		se_in.search(expr).each do |el|
 			return true if el==self
@@ -207,8 +226,10 @@ module Hpricot::Traverse
 	end
 
 	def root
+		return @root unless @root.nil?
 		se_in=self
 		se_in=se_in.parent until se_in.parent.nil?
+		@root=se_in
 		se_in
 	end
 
@@ -221,3 +242,6 @@ module Hpricot::Traverse
 	end
 end
 
+class Hpricot::Elements
+	alias_method :blank?, :empty?
+end

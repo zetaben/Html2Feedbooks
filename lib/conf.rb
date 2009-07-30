@@ -8,6 +8,7 @@ module HTML2FB
 				begin
 					if File.readable?(f) && File.exists?(f)
 						@conf=File.open(f,'r'){|txt| YAML::load(txt)}
+						puts "loaded config file : "+f
 						return 
 					end
 				rescue Exception => e 
