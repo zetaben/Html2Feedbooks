@@ -216,6 +216,10 @@ end
 
 module Hpricot::Traverse
 	def in_search?(expr)
+		if expr !~ /[^a-z0-9]/
+			return self.name.downcase()==expr.downcase()	
+		end
+
 		se_in=self.parent
 		if expr[0..1]=='/'
 		se_in=self.root
