@@ -109,7 +109,7 @@ module HTML2FB
 			doc.traverse_all_element do |e|
 				unless e.is_a?Hpricot::Text 
 					e.name='xhtml:'+e.name
-					e.etag='xhtml:'+e.etag unless e.etag.nil?
+					e.etag='xhtml:'+e.etag unless (!e.respond_to?:etag) || e.etag.nil?
 				end
 			end
 			FBPost.push(conf,'',doc.to_html,"Text",path) 
