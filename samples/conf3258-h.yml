@@ -1,0 +1,26 @@
+remove: 
+   class:
+        - totoc
+        - pagenum
+        - totoi
+        - img
+        - gutlic
+   expr:
+        - 'table' 
+   before:
+        - 'hr:eq(1)'
+select:
+  - expr: "//h2:first"
+    fblevel: section
+  - expr: h2
+    fblevel: part
+    select: 
+       - expr: center
+         fblevel: chapter
+
+fb:
+  user: zeta1
+  bookid: 4075
+  booktype: book
+  pass: #ask#
+  host: "feedbooks.com"

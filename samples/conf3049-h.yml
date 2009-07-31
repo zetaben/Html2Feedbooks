@@ -1,0 +1,27 @@
+remove: 
+   class:
+        - totoc
+        - pagenum
+        - totoi
+        - img
+   expr:
+        - 'table' 
+        - //pre
+        - hr
+   before:
+        - "//p[11]"
+select:
+  - expr: "//h2:first"
+    fblevel: section
+  - expr: h2
+    fblevel: part
+    select: 
+       - expr: h3
+         fblevel: chapter
+
+fb:
+  user: zeta1
+  bookid: 4073
+  booktype: book
+  pass: #ask#
+  host: "feedbooks.com"
