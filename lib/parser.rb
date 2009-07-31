@@ -175,7 +175,9 @@ module HTML2FB
 
 		def close_section(lvl)
 			return if @starts[lvl].nil?
-			@starts[lvl-1].content.push @starts[lvl]
+			llvl=lvl-1
+			llvl=llvl-1 until !@starts[llvl].nil?
+			@starts[llvl].content.push @starts[lvl]
 			@starts[lvl]=nil
 		end
 
