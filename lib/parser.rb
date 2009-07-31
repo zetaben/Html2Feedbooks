@@ -50,7 +50,8 @@ module HTML2FB
 				end unless @conf['remove']['before'].nil?
 				@conf['remove']['between'].each do |cl|
 #					puts "between "+cl.inspect
-					doc.between(cl.first,cl.last).remove
+					t=doc.between(cl.first,cl.last)
+					t.remove unless t.nil?
 				end unless @conf['remove']['between'].nil?
 				@conf['remove']['after'].each do |cl|
 					x=doc.at(cl)
@@ -237,6 +238,10 @@ module Hpricot::Traverse
 		se_in=se_in.parent until se_in.parent.nil?
 		@root=se_in
 		se_in
+	end
+
+	def between(a,b)
+		root.search(a..b)
 	end
 
 	def extract_text
