@@ -158,7 +158,11 @@ module HTML2FB
 		end
 
 		def open_section(obj,lvl,el)
+			if @content=='body'
+			tmp=el.preceding[0..-1]
+			else
 			tmp=el.root.search(@content...(el.xpath))[1..-1]
+			end
 			unless tmp.blank?
 			tmph=tmp.to_html
 			unless tmph.blank?
