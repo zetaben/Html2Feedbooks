@@ -15,6 +15,25 @@ module HTML2FB
 		def parse(txt)
 			puts "Parsing HTML"
 			pdoc=Hpricot(txt)
+			if @conf['conv']
+				mc=pdoc/'meta[@http-equiv="Content-Type"]'
+				if mc.size>0
+					charset=mc.first.attributes['content'].split(';').find do |s|
+						s.strip[0,7]=='charset'
+					end
+					unless charset.nil?
+						tc=charset.split('=').last.strip
+					end
+
+					unless tc.nil? 
+						puts "Trying to convert source encoding from #{tc} to utf-8"
+						require 'iconv'
+						pdoc=Hpricot(Iconv.conv('utf-8',tc.downcase,txt))
+
+					end
+
+				end
+			end
 			doc=Document.new
 			puts "Removing garbage elements"
 			remove_objs(pdoc)

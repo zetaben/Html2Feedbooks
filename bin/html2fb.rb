@@ -14,6 +14,7 @@ include HTML2FB
 options = {}
 options[:conf] = "conf.yaml"
 options[:preview] = true
+options[:conv] = true
 OptionParser.new do |opts|
 	opts.banner = "Usage: html2fb [options] URL"
 
@@ -22,6 +23,9 @@ OptionParser.new do |opts|
 	end
 	opts.on("-s", "-s","Send to feedbooks") do |f|
 		options[:preview] = !f
+	end
+	opts.on("-nc", "--no-conv","No charset conversion") do |f|
+		options[:conv] = !f
 	end
 end.parse!
 
@@ -40,7 +44,7 @@ while !valid
 	print "URL : " if entry.nil? || entry==''
 	entry=STDIN.readline.strip unless valid
 end
-conf=Conf.new(options[:conf])
+conf=Conf.new(options[:conf],options[:conv])
 content=Downloader.download(url)
 #puts content.size
 doc=Parser.new(conf).parse(content)
