@@ -46,7 +46,7 @@ module HTML2FB
 			puts "Building TOC"
 			parse_text(pdoc,doc)	
 
-#			puts green(bold(doc.pretty_inspect))
+			#			puts green(bold(doc.pretty_inspect))
 
 			return doc
 		end
@@ -63,36 +63,36 @@ module HTML2FB
 				@conf['remove']['before'].each do |cl|
 					x=doc.at(cl)
 					if x
-					x.preceding.remove
-					x.parent.children.delete(x)
+						x.preceding.remove
+						x.parent.children.delete(x)
 					end
 				end unless @conf['remove']['before'].nil?
 				@conf['remove']['between'].each do |cl|
-#					puts "between "+cl.inspect
+					#					puts "between "+cl.inspect
 					t=doc.between(cl.first,cl.last)
 					t.remove unless t.nil?
 				end unless @conf['remove']['between'].nil?
 				@conf['remove']['after'].each do |cl|
 					x=doc.at(cl)
 					if x
-					x.following.remove
-					x.parent.children.delete(x)
+						x.following.remove
+						x.parent.children.delete(x)
 					end
 				end unless @conf['remove']['after'].nil?
 			end
-#			File.open('/tmp/test.html','w'){|f| f.write doc.to_html}
+			#			File.open('/tmp/test.html','w'){|f| f.write doc.to_html}
 		end
 
 		def parse_text(doc,ret)
-#			RubyProf.start
+			#			RubyProf.start
 
 
 			aut=build_autom(@conf['select'],ret)
-			
+
 			pbar = ProgressBar.new("Parsing", doc.search('//').size)
 			doc.traverse_all_element do |el|
-			aut.feed(el)
-			pbar.inc
+				aut.feed(el)
+				pbar.inc
 			end
 			pbar.finish
 			aut.finish(doc)
@@ -166,7 +166,7 @@ module HTML2FB
 
 		def finish(doc)
 			unless @content.nil?
-			#	t=create_textNode(doc.root.search(@content...doc.children.last.xpath))
+				#	t=create_textNode(doc.root.search(@content...doc.children.last.xpath))
 				t=create_textNode(doc.at(@content).following.to_html)
 				@starts[@current_level].content.push(t)
 			end
@@ -178,16 +178,19 @@ module HTML2FB
 
 		def open_section(obj,lvl,el)
 			if @content=='body'
-			tmp=el.preceding[0..-1]
+				tmp=el.preceding[0..-1]
 			else
-			tmp=el.root.search(@content...(el.xpath))[1..-1]
+				tmp=el.root.search(@content...(el.xpath))[1..-1]
+			end
+			if tmp.blank? #search can'find between siblins
+				tmp=el.root.deep_between(@content,(el.xpath))
 			end
 			unless tmp.blank?
-			tmph=tmp.to_html
-			unless tmph.blank?
-			t=create_textNode(tmph)
-			@starts[@current_level].content.push(t)
-			end
+				tmph=tmp.to_html
+				unless tmph.blank?
+					t=create_textNode(tmph)
+					@starts[@current_level].content.push(t)
+				end
 			end
 			(lvl..@max_level).to_a.reverse.each do |l|
 				close_section(l)
@@ -246,12 +249,12 @@ module Hpricot::Traverse
 
 		se_in=self.parent
 		if expr[0..1]=='/'
-		se_in=self.root
+			se_in=self.root
 		end
 		se_in.search(expr).each do |el|
 			return true if el==self
 		end
-#		puts self.name+" "+expr
+		#		puts self.name+" "+expr
 		return false
 	end
 
@@ -274,6 +277,57 @@ module Hpricot::Traverse
 		end
 		t
 	end
+	def deep_between(i,j)
+
+		unless j.nil? || self.at(j).nil?
+			tm=self.at(i)
+			prec=tm.deep_preceding
+			r=Hpricot::Elements[*self.at(j).deep_preceding.find_all{|el| !(prec.include?el || el==tm)}]
+		else
+			r=self.at(i).deep_following unless self.at(i).nil?
+		end
+		Hpricot::Elements[*select_end(r,i)]
+	end
+
+	def select_end(tab,expr)
+
+		s=[]
+		f=false
+		idx=-1
+		i=0
+		tab.each do |e|
+			if e.search(expr.gsub(e.xpath,'.')).size > 0
+				idx=i
+				#if e.search(i).size > 0
+				if e.children.find{|ee| ee.xpath==expr }
+					e.children.each do |ee|
+						s << ee if f
+						f=true if ee.xpath==expr
+					end
+				else
+					s=select_end(e.children,expr)
+				end
+				break
+			else
+				i+=1
+			end
+			break if idx>0
+		end
+		return s+tab[(idx+1)..-1]
+	end
+
+	def deep_preceding()
+		ret=Hpricot::Elements[]
+		ret+=parent.deep_preceding if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
+		ret+=preceding
+		Hpricot::Elements[*ret]
+	end
+	def deep_following()
+		ret=following
+		ret+=parent.deep_following if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
+		Hpricot::Elements[*ret]
+	end
+
 end
 
 class Hpricot::Elements
