@@ -6,7 +6,8 @@ A script to automate basic publishing work on Feedbooks.com.
 Usage
 -----
 
-./html2fb URL.html
+html2fb URL.html
+(it should already reside somewhere in your PATH after installation)
 
 You can change some settings by creating your own configuration file and using 
 
