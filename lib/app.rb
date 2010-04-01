@@ -64,7 +64,10 @@ class AtomPost
 
 		res = Net::HTTP.new(url.host, url.port).start {|http| http.request(req) }
 		case res
-		when Net::HTTPSuccess, Net::HTTPRedirection
+		when Net::HTTPRedirection
+			self.addr=res['location']
+			return send
+		when Net::HTTPSuccess
 #			STDERR.puts green(res['location']) if res['location']
 			res['location'] if res['location']
 		else
