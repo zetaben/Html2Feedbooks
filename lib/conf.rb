@@ -21,5 +21,9 @@ module HTML2FB
 		def [](x)
 			@conf[x]
 		end
+
+		def to_h
+			@conf
+		end
 	end
 end

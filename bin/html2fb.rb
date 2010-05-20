@@ -8,6 +8,7 @@ require 'parser.rb'
 require 'feedbooks.rb'
 require 'tmpdir'
 require 'launchy'
+require 'digest/md5'
 
 include HTML2FB
 
@@ -27,10 +28,13 @@ OptionParser.new do |opts|
 	opts.on("-nc", "--no-conv","No charset conversion") do |f|
 		options[:conv] = !f
 	end
+	opts.on("-C", "--cache", String,"Configuration file") do |f|
+		options[:cache] = !f
+	end
 end.parse!
-
 valid=false
 entry=ARGV[0]
+basedir=Dir.tmpdir+'/'
 while !valid
 	url=nil
 	begin
@@ -45,9 +49,31 @@ while !valid
 	entry=STDIN.readline.strip unless valid
 end
 conf=Conf.new(options[:conf],options[:conv])
+abridged_conf=conf.to_h.reject{|k,v| k=='fb'}
 content=Downloader.download(url)
+cache={}
+ok=false
+if options[:cache] && File.exists?(basedir+'.cache')
+	cache=Marshal.restore(File.open(basedir+'.cache','r'))
+	ok=Digest::MD5.hexdigest(content)==Digest::MD5.hexdigest(cache[:content])
+	abridged_conf.each do |k,v|
+#		puts (abridged_conf[k]==cache[:conf][k]).inspect
+#		puts (abridged_conf[k]).inspect
+#		puts (cache[:conf][k]).inspect
+#		puts "-_-_-_-_"
+		ok&&=abridged_conf[k]==cache[:conf][k]
+	end
+end
 #puts content.size
+if options[:cache] && ok
+puts "Using cache file"
+doc=cache[:doc]
+else
 doc=Parser.new(conf).parse(content)
+end
+File.open(basedir+'.cache','w') do |e|
+Marshal.dump({:url => url,:conf => abridged_conf, :content => content, :doc => doc},e)
+end
 puts doc.toc.to_yaml
 if options[:preview]
 	page=File.join(Dir.tmpdir(),Digest::MD5.hexdigest(url.to_s))+'.html'
