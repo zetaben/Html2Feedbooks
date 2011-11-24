@@ -1,5 +1,5 @@
 require 'hpricot'
-require 'document.rb'
+require 'html2fb/document.rb'
 require 'progressbar'
 #require 'ruby-prof'
 #require 'term/ansicolor'

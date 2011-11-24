@@ -1,4 +1,4 @@
-require 'app.rb'
+require 'html2fb/app.rb'
 require 'hpricot'
 require 'digest/md5'
 

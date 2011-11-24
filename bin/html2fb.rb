@@ -1,14 +1,11 @@
 #!/usr/bin/ruby
+require 'rubygems'
 require 'optparse'
 require 'open-uri'
-require 'conf.rb'
-require 'downloader.rb'
-require 'document.rb'
-require 'parser.rb'
-require 'feedbooks.rb'
 require 'tmpdir'
 require 'launchy'
 require 'digest/md5'
+require 'html2fb'
 
 include HTML2FB
 
