@@ -10,11 +10,11 @@ remove:
    before:
         - "//br[8]"
    after:
-        - '//hr:last'
+        - '(//hr)[last()]'
 select:
-  - expr: "center:first"
+  - expr: "center[0]"
     fblevel: section
-  - expr: "center:last"
+  - expr: "center[last()]"
     fblevel: section
   - expr: '//center[h3]'
     fblevel: chapter

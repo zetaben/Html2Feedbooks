@@ -9,9 +9,9 @@ remove:
         - //pre
         - hr
    before:
-        - "//p[11]"
+        - "(//p)[11]"
 select:
-  - expr: "//h2:first"
+  - expr: "(//h2)[0]"
     fblevel: section
   - expr: h2
     fblevel: part

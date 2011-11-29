@@ -8,14 +8,15 @@ remove:
         - 'table' 
         - //pre
         - hr
+        - '(//p)[last()]'
    before:
         - h1
    between:
         -
-          - '//h2:eq(1)'
-          - '//p:eq(4)'
+          - '//h2[2]'
+          - '//p[5]'
 select:
-  - expr: "//h2:first"
+  - expr: "//h2[0]"
     fblevel: section
   - expr: h2
     fblevel: chapter

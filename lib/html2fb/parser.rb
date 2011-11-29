@@ -1,4 +1,4 @@
-require 'hpricot'
+require 'nokogiri'
 require 'html2fb/document.rb'
 require 'progressbar'
 #require 'ruby-prof'
@@ -14,11 +14,11 @@ module HTML2FB
 
 		def parse(txt)
 			puts "Parsing HTML"
-			pdoc=Hpricot(txt)
+			pdoc=Nokogiri::HTML(txt)
 			if @conf['conv']
 				mc=pdoc/'meta[@http-equiv="Content-Type"]'
 				if mc.size>0
-					charset=mc.first.attributes['content'].split(';').find do |s|
+					charset=mc.first.attributes['content'].to_s.split(';').find do |s|
 						s.strip[0,7]=='charset'
 					end
 					unless charset.nil?
@@ -28,7 +28,7 @@ module HTML2FB
 					unless tc.nil? 
 						puts "Trying to convert source encoding from #{tc} to utf-8"
 						require 'iconv'
-						pdoc=Hpricot(Iconv.conv('utf-8',tc.downcase,txt))
+						pdoc=Nokogiri::HTML(Iconv.conv('utf-8',tc.downcase,txt))
 
 					end
 
@@ -38,7 +38,7 @@ module HTML2FB
 			puts "Removing garbage elements"
 			remove_objs(pdoc)
 			ti=pdoc.at('title')
-			doc.title= ti.extract_text.strip unless ti.nil?
+			doc.title= ti.text.strip unless ti.nil?
 			#			pdoc.search('//h3').each do |e|
 			#				doc.content.push(e.inner_text)
 			#			end
@@ -58,10 +58,10 @@ module HTML2FB
 					doc.search('.'+cl).remove
 				end unless @conf['remove']['class'].nil?
 				@conf['remove']['expr'].each do |cl|
-					doc.search(cl).remove
+					doc.search(cl).remove rescue doc.xpath(cl).remove
 				end unless @conf['remove']['expr'].nil?
 				@conf['remove']['before'].each do |cl|
-					x=doc.at(cl)
+					x=doc.at(cl) rescue doc.at_xpath(cl)
 					if x
 						x.preceding.remove
 						x.parent.children.delete(x)
@@ -73,7 +73,7 @@ module HTML2FB
 					t.remove unless t.nil?
 				end unless @conf['remove']['between'].nil?
 				@conf['remove']['after'].each do |cl|
-					x=doc.at(cl)
+					x=doc.at(cl) rescue doc.at_xpath(cl)
 					if x
 						x.following.remove
 						x.parent.children.delete(x)
@@ -89,13 +89,13 @@ module HTML2FB
 
 			aut=build_autom(@conf['select'],ret)
 
-			pbar = ProgressBar.new("Parsing", doc.search('//').size)
-			doc.traverse_all_element do |el|
+			pbar = ProgressBar.new("Parsing", doc.search('//*').size)
+			doc.traverse do |el|
 				aut.feed(el)
 				pbar.inc
 			end
-			pbar.finish
 			aut.finish(doc)
+			pbar.finish
 =begin
 			 result = RubyProf.stop
 			  printer = RubyProf::FlatPrinter.new(result)
@@ -180,10 +180,10 @@ module HTML2FB
 			if @content=='body'
 				tmp=el.preceding[0..-1]
 			else
-				tmp=el.root.search(@content...(el.xpath))[1..-1]
+				tmp=el.root.between(@content,(el.path),true)[1..-1]
 			end
 			if tmp.blank? #search can'find between siblins
-				tmp=el.root.deep_between(@content,(el.xpath))
+				tmp=el.root.deep_between(@content,(el.path))
 			end
 			unless tmp.blank?
 				tmph=tmp.to_html
@@ -195,7 +195,7 @@ module HTML2FB
 			(lvl..@max_level).to_a.reverse.each do |l|
 				close_section(l)
 			end
-			@starts[lvl]=create_fbsection(el.root.at(obj[:xpath]).extract_text,obj[:fblevel])
+			@starts[lvl]=create_fbsection(el.root.at_xpath(obj[:xpath]).text,obj[:fblevel])
 			@content=obj[:xpath]
 			@current_level=lvl
 		end
@@ -209,7 +209,7 @@ module HTML2FB
 		end
 
 		def feed(el)
-			return if el.is_a?Hpricot::Text
+			return if el.text?
 			@done=[[]*@levels.size]
 
 			@levels.each_with_index do  |lvl,i|
@@ -218,7 +218,7 @@ module HTML2FB
 					if el.in_search?(expr['expr'])
 
 
-						open_section({:xpath => el.xpath, :fblevel => expr['fblevel']},i+1,el)
+						open_section({:xpath => el.path, :fblevel => expr['fblevel']},i+1,el)
 						break
 					end
 				end
@@ -228,6 +228,9 @@ module HTML2FB
 	end
 end
 
+class  Nokogiri::XML::NodeSet
+	alias :blank? :empty?
+end
 
 class String
 	def blank?
@@ -241,17 +244,22 @@ class NilClass
 	end
 end
 
-module Hpricot::Traverse
+
+
+class Nokogiri::XML::Node
+
 	def in_search?(expr)
 		if expr !~ /[^a-z0-9]/
 			return self.name.downcase()==expr.downcase()	
 		end
 
-		se_in=self.parent
+		se_in=self.root
+		se_in=self.parent if self.respond_to?(:parent)
 		if expr[0..1]=='/'
 			se_in=self.root
 		end
-		se_in.search(expr).each do |el|
+		set=se_in.search(expr) rescue se_in.xpath(expr)
+		set.each do |el|
 			return true if el==self
 		end
 		#		puts self.name+" "+expr
@@ -259,34 +267,60 @@ module Hpricot::Traverse
 	end
 
 	def root
-		return @root unless @root.nil?
-		se_in=self
-		se_in=se_in.parent until se_in.parent.nil?
-		@root=se_in
-		se_in
+		self.document.root
 	end
 
-	def between(a,b)
-		root.search(a..b)
+	def node_position
+		return @node_position if @node_position
+		@node_position=parent.children.index(self)
 	end
 
-	def extract_text
-		t=''
-		self.traverse_all_element do |e|
-			t+=e.content.to_s if e.is_a?(Hpricot::Text)
+	def between(a,b,excl=false)
+
+		#from nokogiri
+		offset=(excl ? -1 : 0)
+		ary = []
+		ele1=at(a) rescue at_xpath(a)
+		ele2=at(b) rescue at_xpath(b)
+		
+		if ele1 and ele2
+			# let's quickly take care of siblings
+			if ele1.parent == ele2.parent
+				
+				ary = ele1.parent.children[ele1.node_position..(ele2.node_position+offset)]
+			else
+				# find common parent
+				ele1_p=ele1.ancestors
+				ele2_p=ele2.ancestors
+				common_parent = ele1_p.zip(ele2_p).select { |p1, p2| p1 == p2 }.flatten.first
+
+				child = nil
+				if ele1 == common_parent
+					child = ele2
+				elsif ele2 == common_parent
+					child = ele1
+				end
+
+				if child
+					ary = common_parent.children[0..(child.node_position+offset)]
+				end
+			end
 		end
-		t
-	end
-	def deep_between(i,j)
 
-		unless j.nil? || self.at(j).nil?
-			tm=self.at(i)
+		return Nokogiri::XML::NodeSet.new(ele1.document,ary)
+	end
+
+
+
+	def deep_between(i,j)
+		unless j.nil? || self.at_xpath(j).nil?
+			tm=self.at_xpath(i)
 			prec=tm.deep_preceding
-			r=Hpricot::Elements[*self.at(j).deep_preceding.find_all{|el| !(prec.include?el || el==tm)}]
+			r=Nokogiri::XML::NodeSet.new(tm.document,[*self.at(j).deep_preceding.find_all{|el| !(prec.include?el || el==tm)}])
 		else
 			r=self.at(i).deep_following unless self.at(i).nil?
 		end
-		Hpricot::Elements[*select_end(r,i)]
+		Nokogiri::XML::NodeSet.new(self.document,[*select_end(r,i)])
 	end
 
 	def select_end(tab,expr)
@@ -296,13 +330,15 @@ module Hpricot::Traverse
 		idx=-1
 		i=0
 		tab.each do |e|
-			if e.search(expr.gsub(e.xpath,'.')).size > 0
+			nxp=expr.gsub(e.path,'.')
+			set=e.search(nxp) rescue e.xpath(nxp)
+			if set.size > 0
 				idx=i
 				#if e.search(i).size > 0
-				if e.children.find{|ee| ee.xpath==expr }
+				if e.children.find{|ee| ee.path==expr }
 					e.children.each do |ee|
 						s << ee if f
-						f=true if ee.xpath==expr
+						f=true if ee.path==expr
 					end
 				else
 					s=select_end(e.children,expr)
@@ -316,20 +352,24 @@ module Hpricot::Traverse
 		return s+tab[(idx+1)..-1]
 	end
 
+	def preceding
+		self.parent.children[0...node_position]
+	end
+	
+	def following
+		self.parent.children[node_position+1..-1]
+	end
+
 	def deep_preceding()
-		ret=Hpricot::Elements[]
-		ret+=parent.deep_preceding if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
+		ret=Nokogiri::XML::NodeSet.new(self.document,[])
+		ret+=parent.deep_preceding if respond_to?(:parent)  && !parent.is_a?(Nokogiri::XML::Document)
 		ret+=preceding
-		Hpricot::Elements[*ret]
+		ret
 	end
 	def deep_following()
 		ret=following
-		ret+=parent.deep_following if respond_to?(:parent) && !parent.is_a?(Hpricot::Doc )
-		Hpricot::Elements[*ret]
+		ret+=parent.deep_following if respond_to?(:parent)  && !parent.is_a?(Nokogiri::XML::Document)
+		ret
 	end
 
-end
-
-class Hpricot::Elements
-	alias_method :blank?, :empty?
 end

@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
   s.default_executable = 'html2fb.rb'
-  s.add_dependency('hpricot', '= 0.8.1')
+  s.add_dependency('nokogiri','>=1.4.1')
   s.add_dependency('htmlentities', '>= 4.2.1')
   s.add_dependency('launchy', '>= 2.0.0')
   s.add_dependency('progressbar', '>= 0.0.3')

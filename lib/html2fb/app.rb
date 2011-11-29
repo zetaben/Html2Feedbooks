@@ -34,8 +34,8 @@ class AtomPost
 			req = Net::HTTP::Get.new(url.path)
 			req.basic_auth user,pass  unless user.nil?
 			response = http.request(req)
-			doc=Hpricot(response.body)
-			e=doc.at('//entry').at('link[@rel="down"]')
+			doc=Nokogiri::XML(response.body).remove_namespaces!
+			e=doc.at('//entry/link[@rel="down"]')
 			return 	URI.parse(e[:href]).path unless e.nil? 
 		}
 	end
@@ -47,7 +47,6 @@ class AtomPost
 		#STDERR.puts "sending to #{url}"
 		req = Net::HTTP::Post.new(url.path)
 		req.basic_auth user,pass  unless user.nil?
-
 		req.body  = '<?xml version="1.0"?>'+"\n"
 		req.body  +='<entry xmlns="http://www.w3.org/2005/Atom">'+"\n"
 		req.body  +='<title>'+decode_text(title)+'</title>'+"\n"
@@ -77,9 +76,9 @@ class AtomPost
 
 	def recode_text(txt)
 		return txt if txt.blank?
-		m=Hpricot(txt)
-		m.traverse_text{|t| t.content=force_decimal_entities(t.content) if t.content.match(/&[a-z][a-z0-9]+;/i)}
-		m.to_html
+		m=Nokogiri::XML("<text>#{txt}</text>")
+		m.traverse{|t| next unless t.text?;t.text=force_decimal_entities(t.text) if t.text.match(/&[a-z][a-z0-9]+;/i)}
+		m.root.inner_html
 	end
 	HTMLENCODER=HTMLEntities.new
 	def force_decimal_entities(txt)
@@ -88,9 +87,9 @@ class AtomPost
 	
 	def decode_text(txt)
 		return txt if txt.blank?
-		m=Hpricot(txt)
-		m.traverse_text{|t| HTMLENCODER.decode(t.content)}
-		m.to_html
+		m=Nokogiri::XML("<text>#{txt}</text>")
+		m.traverse{|t| next unless t.text?; HTMLENCODER.decode(t.text)}
+		m.root.inner_html
 	end
 
 end

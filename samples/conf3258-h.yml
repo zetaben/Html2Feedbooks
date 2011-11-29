@@ -8,9 +8,9 @@ remove:
    expr:
         - 'table' 
    before:
-        - 'hr:eq(1)'
+        - 'hr[2]'
 select:
-  - expr: "//h2:first"
+  - expr: "(//h2)[0]"
     fblevel: section
   - expr: h2
     fblevel: part

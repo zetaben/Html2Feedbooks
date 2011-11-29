@@ -1,5 +1,5 @@
 require 'html2fb/app.rb'
-require 'hpricot'
+require 'nokogiri'
 require 'digest/md5'
 
 module HTML2FB
@@ -105,11 +105,10 @@ module HTML2FB
 		def to_feedbooks(conf,path=nil)
 			stxt=to_html
 			return unless stxt.strip.size > 0
-			doc=Hpricot('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+stxt+'</div>')
-			doc.traverse_all_element do |e|
-				unless e.is_a?Hpricot::Text 
+			doc=Nokogiri::XML('<div xmlns:xhtml="http://www.w3.org/1999/xhtml">'+stxt+'</div>')
+			doc.traverse do |e|
+				if e.element?
 					e.name='xhtml:'+e.name
-					e.etag='xhtml:'+e.etag unless (!e.respond_to?:etag) || e.etag.nil?
 				end
 			end
 			FBPost.push(conf,'',doc.to_html,"Text",path) 
