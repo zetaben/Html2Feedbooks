@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 require 'rubygems'
+
 require 'optparse'
 require 'open-uri'
 require 'tmpdir'
 require 'launchy'
 require 'digest/md5'
-require 'lib/html2fb'
+require 'Html2Feedbooks'
 
 include HTML2FB
 

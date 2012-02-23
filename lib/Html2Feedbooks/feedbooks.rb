@@ -1,4 +1,4 @@
-require 'html2fb/app.rb'
+require 'Html2Feedbooks/app'
 require 'nokogiri'
 require 'digest/md5'
 

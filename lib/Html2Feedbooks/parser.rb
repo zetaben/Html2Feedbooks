@@ -1,5 +1,5 @@
 require 'nokogiri'
-require 'html2fb/document.rb'
+require 'Html2Feedbooks/document'
 require 'progressbar'
 #require 'ruby-prof'
 #require 'term/ansicolor'

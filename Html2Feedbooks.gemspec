@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "html2fb/version"
+require "Html2Feedbooks/version"
 
 Gem::Specification.new do |s|
   s.name        = "Html2Feedbooks"
-  s.version     = Html2fb::VERSION
+  s.version     = HTML2FB::VERSION
   s.authors = ["Benoit Larroque"]
   s.email = ["benoit dot larroque at feedbooks dot com"]
   s.summary = %q{Html2Feedbooks is script to automate basic publishing on feedbooks.com}
